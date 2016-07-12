@@ -44,4 +44,15 @@ dependencies {
     testCompile "org.mockito:mockito-core:2.0.53-beta"
 }
 
-apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'
+apply plugin: 'maven'
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository url: "file://${rootDir}/repository"
+            pom.version = '1.0.0'
+            pom.groupId = 'jp.vasily'
+            pom.artifactId = 'rangeseekbar'
+        }
+    }
+}
