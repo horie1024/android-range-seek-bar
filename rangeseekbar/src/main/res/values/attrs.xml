@@ -20,6 +20,9 @@
         <!-- show the currently selected value above each thumb (defaults to true) -->
         <attr name="valuesAboveThumbs" format="boolean"/>
 
+        <!-- the currently selected value display in fixed position (defaults to false) -->
+        <attr name="valuesFixedPosition" format="boolean"/>
+
         <!-- padding on either side on the slider -->
         <attr name="internalPadding" format="dimension"/>
 

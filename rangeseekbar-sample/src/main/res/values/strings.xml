@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">RangeSeekBar</string>
+    <string name="min_label">下限なし</string>
+    <string name="max_label">上限なし</string>
 </resources>

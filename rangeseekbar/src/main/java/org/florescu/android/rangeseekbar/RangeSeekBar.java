@@ -114,6 +114,7 @@ public class RangeSeekBar<T extends Number> extends ImageView {
 
     private int textOffset;
     private int textSize;
+    private int textJaSize;
     private int distanceToTop;
     private RectF rect;
 
@@ -121,6 +122,7 @@ public class RangeSeekBar<T extends Number> extends ImageView {
     private boolean alwaysActive;
     private boolean showLabels;
     private boolean showTextAboveThumbs;
+    private boolean valuesFixedPosition;
     private float internalPad;
     private int activeColor;
     private int defaultColor;
@@ -135,7 +137,6 @@ public class RangeSeekBar<T extends Number> extends ImageView {
     private Matrix thumbShadowMatrix = new Matrix();
 
     private boolean activateOnDefaultValues;
-
 
     public RangeSeekBar(Context context) {
         super(context);
@@ -186,6 +187,7 @@ public class RangeSeekBar<T extends Number> extends ImageView {
             defaultColor = Color.GRAY;
             alwaysActive = false;
             showTextAboveThumbs = true;
+            valuesFixedPosition = false;
             textAboveThumbsColor = Color.WHITE;
             thumbShadowColor = defaultShadowColor;
             thumbShadowXOffset = defaultShadowXOffset;
@@ -200,6 +202,7 @@ public class RangeSeekBar<T extends Number> extends ImageView {
                         extractNumericValueFromAttributes(a, R.styleable.RangeSeekBar_absoluteMaxValue, DEFAULT_MAXIMUM)
                 );
                 showTextAboveThumbs = a.getBoolean(R.styleable.RangeSeekBar_valuesAboveThumbs, true);
+                valuesFixedPosition = a.getBoolean(R.styleable.RangeSeekBar_valuesFixedPosition, false);
                 textAboveThumbsColor = a.getColor(R.styleable.RangeSeekBar_textAboveThumbsColor, Color.WHITE);
                 singleThumb = a.getBoolean(R.styleable.RangeSeekBar_singleThumb, false);
                 showLabels = a.getBoolean(R.styleable.RangeSeekBar_showLabels, true);
@@ -249,6 +252,7 @@ public class RangeSeekBar<T extends Number> extends ImageView {
         setValuePrimAndNumberType();
 
         textSize = PixelUtil.dpToPx(context, DEFAULT_TEXT_SIZE_IN_DP);
+        textJaSize = PixelUtil.dpToPx(context, DEFAULT_TEXT_SIZE_IN_DP - 2);
         distanceToTop = PixelUtil.dpToPx(context, DEFAULT_TEXT_DISTANCE_TO_TOP_IN_DP);
         textOffset = !showTextAboveThumbs ? 0 : this.textSize + PixelUtil.dpToPx(context,
                 DEFAULT_TEXT_DISTANCE_TO_BUTTON_IN_DP) + this.distanceToTop;
@@ -613,9 +617,16 @@ public class RangeSeekBar<T extends Number> extends ImageView {
 
         boolean selectedValuesAreDefault = (normalizedMinValue <= minDeltaForDefault && normalizedMaxValue >= 1 - minDeltaForDefault);
 
-        int colorToUseForButtonsAndHighlightedLine = !alwaysActive && !activateOnDefaultValues && selectedValuesAreDefault ?
-                defaultColor : // default values
-                activeColor;   // non default, filter is active
+        int colorToUseForButtonsAndHighlightedLine;
+        if (valuesFixedPosition) {
+            colorToUseForButtonsAndHighlightedLine = !alwaysActive && selectedValuesAreDefault ?
+                    defaultColor : // default values
+                    activeColor;   // non default, filter is active
+        } else {
+            colorToUseForButtonsAndHighlightedLine = !alwaysActive && !activateOnDefaultValues && selectedValuesAreDefault ?
+                    defaultColor : // default values
+                    activeColor;   // non default, filter is active
+        }
 
         // draw seek bar active range line
         rect.left = normalizedToScreen(normalizedMinValue);
@@ -643,15 +654,40 @@ public class RangeSeekBar<T extends Number> extends ImageView {
         // draw the text if sliders have moved from default edges
         if (showTextAboveThumbs && (activateOnDefaultValues || !selectedValuesAreDefault)) {
             paint.setTextSize(textSize);
-            paint.setColor(textAboveThumbsColor);
+            if (valuesFixedPosition) {
+                paint.setColor(colorToUseForButtonsAndHighlightedLine);
+            } else {
+                paint.setColor(textAboveThumbsColor);
+            }
 
             String minText = valueToString(getSelectedMinValue());
             String maxText = valueToString(getSelectedMaxValue());
+
+            if (valueIsJa(getSelectedMinValue())) {
+                paint.setTextSize(textJaSize);
+            } else {
+                paint.setTextSize(textSize);
+            }
+
+            if (valueIsJa(getSelectedMaxValue())) {
+                paint.setTextSize(textJaSize);
+            } else {
+                paint.setTextSize(textSize);
+            }
+
             float minTextWidth = paint.measureText(minText);
             float maxTextWidth = paint.measureText(maxText);
+
             // keep the position so that the labels don't get cut off
-            float minPosition = Math.max(0f, normalizedToScreen(normalizedMinValue) - minTextWidth * 0.5f);
-            float maxPosition = Math.min(getWidth() - maxTextWidth, normalizedToScreen(normalizedMaxValue) - maxTextWidth * 0.5f);
+            float minPosition;
+            float maxPosition;
+            if (valuesFixedPosition) {
+                minPosition = 0f + padding;
+                maxPosition = getWidth() - maxTextWidth - padding;
+            } else {
+                minPosition = Math.max(0f, normalizedToScreen(normalizedMinValue) - minTextWidth * 0.5f);
+                maxPosition = Math.min(getWidth() - maxTextWidth, normalizedToScreen(normalizedMaxValue) - maxTextWidth * 0.5f);
+            }
 
             if (!singleThumb) {
                 // check if the labels overlap, or are too close to each other
@@ -660,14 +696,27 @@ public class RangeSeekBar<T extends Number> extends ImageView {
                 if (overlap > 0f) {
                     // we could move them the same ("overlap * 0.5f")
                     // but we rather move more the one which is farther from the ends, as it has more space
-                    minPosition -= overlap * normalizedMinValue / (normalizedMinValue + 1-normalizedMaxValue);
-                    maxPosition += overlap * (1-normalizedMaxValue) / (normalizedMinValue + 1-normalizedMaxValue);
+                    minPosition -= overlap * normalizedMinValue / (normalizedMinValue + 1 - normalizedMaxValue);
+                    maxPosition += overlap * (1 - normalizedMaxValue) / (normalizedMinValue + 1 - normalizedMaxValue);
                 }
+
+                if (valueIsJa(getSelectedMinValue())) {
+                    paint.setTextSize(textJaSize);
+                } else {
+                    paint.setTextSize(textSize);
+                }
+
                 canvas.drawText(minText,
                         minPosition,
                         distanceToTop + textSize,
                         paint);
 
+            }
+
+            if (valueIsJa(getSelectedMaxValue())) {
+                paint.setTextSize(textJaSize);
+            } else {
+                paint.setTextSize(textSize);
             }
 
             canvas.drawText(maxText,
@@ -680,6 +729,10 @@ public class RangeSeekBar<T extends Number> extends ImageView {
 
     protected String valueToString(T value) {
         return String.valueOf(value);
+    }
+
+    protected boolean valueIsJa(T value) {
+        return false;
     }
 
     /**
@@ -714,7 +767,7 @@ public class RangeSeekBar<T extends Number> extends ImageView {
      */
     private void drawThumb(float screenCoord, boolean pressed, Canvas canvas, boolean areSelectedValuesDefault) {
         Bitmap buttonToDraw;
-        if (!activateOnDefaultValues && areSelectedValuesDefault) {
+        if ((valuesFixedPosition || !activateOnDefaultValues) && areSelectedValuesDefault) {
             buttonToDraw = thumbDisabledImage;
         } else {
             buttonToDraw = pressed ? thumbPressedImage : thumbImage;
