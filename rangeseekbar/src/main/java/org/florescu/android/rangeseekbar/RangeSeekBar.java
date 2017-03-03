@@ -34,11 +34,11 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.ColorRes;
 import android.support.annotation.NonNull;
+import android.support.v7.widget.AppCompatImageView;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
-import android.widget.ImageView;
 
 import org.florescu.android.util.BitmapUtil;
 import org.florescu.android.util.PixelUtil;
@@ -58,7 +58,7 @@ import java.math.BigDecimal;
  * @author Alex Florescu (alex@florescu.org)
  * @author Michael Keppler (bananeweizen@gmx.de)
  */
-public class RangeSeekBar<T extends Number> extends ImageView {
+public class RangeSeekBar<T extends Number> extends AppCompatImageView {
     /**
      * Default color of a {@link RangeSeekBar}, #FF33B5E5. This is also known as "Ice Cream Sandwich" blue.
      */
@@ -668,26 +668,18 @@ public class RangeSeekBar<T extends Number> extends ImageView {
             } else {
                 paint.setTextSize(textSize);
             }
+            float minTextWidth = paint.measureText(minText);
 
             if (valueIsJa(getSelectedMaxValue())) {
                 paint.setTextSize(textJaSize);
             } else {
                 paint.setTextSize(textSize);
             }
-
-            float minTextWidth = paint.measureText(minText);
             float maxTextWidth = paint.measureText(maxText);
 
             // keep the position so that the labels don't get cut off
-            float minPosition;
-            float maxPosition;
-            if (valuesFixedPosition) {
-                minPosition = 0f + padding;
-                maxPosition = getWidth() - maxTextWidth - padding;
-            } else {
-                minPosition = Math.max(0f, normalizedToScreen(normalizedMinValue) - minTextWidth * 0.5f);
-                maxPosition = Math.min(getWidth() - maxTextWidth, normalizedToScreen(normalizedMaxValue) - maxTextWidth * 0.5f);
-            }
+            float minPosition = Math.max(0f, normalizedToScreen(normalizedMinValue) - minTextWidth * 0.5f);
+            float maxPosition = Math.min(getWidth() - maxTextWidth, normalizedToScreen(normalizedMaxValue) - maxTextWidth * 0.5f);
 
             if (!singleThumb) {
                 // check if the labels overlap, or are too close to each other

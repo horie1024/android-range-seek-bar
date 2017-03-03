@@ -52,7 +52,7 @@ uploadArchives {
             repository url: "file://${rootDir}/repository"
             pom.version = '1.0.0'
             pom.groupId = 'jp.vasily'
-            pom.artifactId = 'rangeseekbar'
+            pom.artifactId = 'rangeseekbar-wowma'
         }
     }
 }
